@@ -1,102 +1,142 @@
 # Telecom Customer Churn Prediction
 
-An end-to-end machine learning project that predicts whether a telecommunications customer is likely to churn. The repository covers data generation, cleaning, feature engineering, model selection, evaluation, threshold optimization, model persistence, command-line inference, and Streamlit deployment.
+A machine learning project for predicting customer churn in a telecommunications setting. The project covers the full workflow from data preparation and feature engineering to model evaluation and deployment through a Streamlit web application.
 
-## Project Structure
+## Overview
 
-```text
-telecom-customer-churn/
-├── app.py                         # Streamlit deployment app
-├── predict.py                     # Command-line single-customer prediction
-├── generate_dataset.py            # Reproducible telecom dataset generator
-├── requirements.txt
-├── Dockerfile
-├── Procfile
-├── LICENSE
-├── SUBMISSION_CHECKLIST.md
-├── data/
-│   └── telecom_customer_churn.csv
-├── src/
-│   ├── features.py                # Data cleaning + feature engineering
-│   └── train.py                   # Model training, tuning and evaluation
-├── models/
-│   ├── churn_model.joblib         # Trained sklearn pipeline
-│   └── metadata.json              # Threshold, model name and columns
-├── reports/
-│   ├── Churn_Analysis_Report.pdf
-│   ├── metrics.json
-│   ├── classification_report.txt
-│   ├── model_comparison.csv
-│   ├── threshold_analysis.csv
-│   ├── feature_importance.csv
-│   └── figures/
-│       ├── confusion_matrix.png
-│       ├── roc_curve.png
-│       ├── precision_recall_curve.png
-│       ├── threshold_optimization.png
-│       ├── feature_importance.png
-│       └── model_comparison.png
-├── screenshots/                   # Submission-ready evidence images
-└── Customer_Churn_Analysis.ipynb  # Notebook walkthrough
-```
+Customer churn is an important business problem for subscription-based companies because retaining an existing customer is often more cost-effective than acquiring a new one. This project builds a binary classification model that estimates the probability that a customer is likely to leave the service.
+
+The final model is a Logistic Regression pipeline trained on customer demographic, account, billing, and service-related information. The prediction threshold was adjusted to improve recall for churners, which is useful in a retention scenario where missing an at-risk customer can be costly.
+
+## Project Workflow
+
+The project follows these main steps:
+
+1. Data generation and loading
+2. Data cleaning and preprocessing
+3. Feature engineering
+4. Train/test splitting
+5. Model comparison
+6. Model evaluation
+7. Decision-threshold analysis
+8. Model persistence
+9. Streamlit deployment
 
 ## Dataset
 
-The included dataset contains **6,000 synthetic but realistic telecom customer records**. It is generated with a fixed random seed (`42`) so the project is fully reproducible and does not depend on a Kaggle login or external download.
+The repository includes a reproducible telecom customer dataset containing **6,000 records**. The dataset is generated with a fixed random seed so that the same data can be recreated when needed.
 
-It follows the schema commonly used for telecom churn analysis: demographics, tenure, phone/internet services, support services, contract type, billing/payment method, monthly charges, total charges, and a binary `Churn` target.
+The available variables include:
 
-Why synthetic? It makes the submission self-contained and reproducible for grading. The code architecture also works with a real telco churn CSV if the same fields are provided.
+- Customer demographics
+- Tenure
+- Internet and phone services
+- Security and technical support services
+- Contract type
+- Payment method
+- Monthly charges
+- Total charges
+- Churn status
+
+The target variable is `Churn`, where the model predicts whether a customer is likely to leave the service.
 
 ## Feature Engineering
 
-The project adds business-relevant features before modeling:
+In addition to the original variables, several features were created to capture useful customer behavior and account characteristics:
 
-1. `NumServices` - number of subscribed telecom services.
-2. `HasInternet` - whether an internet service is active.
-3. `HasSupportBundle` - whether both Online Security and Tech Support are active.
-4. `AutoPay` - whether the customer uses automatic bank/card payment.
-5. `FamilyAccount` - whether partner or dependents are present.
-6. `AvgMonthlySpend` - total charges divided by tenure.
-7. `ChargeIncreaseRatio` - current monthly charge relative to historical average spend.
-8. `TenureBand` - customer lifecycle buckets from new to long-term.
-9. `HighMonthlyCharge` - indicator for monthly charges >= 90.
-10. `MonthToMonth` - direct churn-risk indicator for short contracts.
-11. `SupportGap` - internet customer without adequate support/security coverage.
+- `NumServices` — total number of subscribed services
+- `HasInternet` — whether the customer has an active internet service
+- `HasSupportBundle` — whether both online security and technical support are active
+- `AutoPay` — whether an automatic payment method is used
+- `FamilyAccount` — whether the customer has a partner or dependents
+- `AvgMonthlySpend` — historical average monthly spend
+- `ChargeIncreaseRatio` — current monthly charge relative to historical average spend
+- `TenureBand` — customer tenure grouped into lifecycle ranges
+- `HighMonthlyCharge` — indicator for relatively high monthly charges
+- `MonthToMonth` — indicator for month-to-month contracts
+- `SupportGap` — internet customers without adequate support or security services
 
-All preprocessing is inside a scikit-learn `Pipeline` / `ColumnTransformer`, reducing leakage risk and ensuring deployment uses exactly the same transformations as training.
+Preprocessing is handled inside a scikit-learn pipeline so the same transformations are applied during both training and prediction.
 
-## Model Selection
+## Models Evaluated
 
-Three baseline models are compared:
+The following classification algorithms were compared:
 
 - Logistic Regression
 - Random Forest
 - Histogram Gradient Boosting
 
-A compact manual tuning step evaluates multiple Random Forest configurations on a validation split. The final selected model is chosen by held-out ROC-AUC.
+The final model was selected using validation and test performance, with ROC-AUC used as one of the main comparison metrics.
 
-### Actual Results From This Package
+## Final Model Performance
 
-| Metric | Result |
+The selected model is **Logistic Regression**.
+
+| Metric | Score |
 |---|---:|
-| Selected model | Logistic Regression |
-| Test ROC-AUC | 0.7864 |
-| Test PR-AUC | 0.7290 |
-| Tuned threshold | 0.33 |
-| Accuracy at tuned threshold | 0.7017 |
-| Precision at tuned threshold | 0.6263 |
-| Recall at tuned threshold | 0.8889 |
-| F1 at tuned threshold | 0.7348 |
-| Accuracy at default 0.50 threshold | 0.7358 |
-| F1 at default 0.50 threshold | 0.7246 |
+| ROC-AUC | 0.7864 |
+| PR-AUC | 0.7290 |
+| Accuracy | 0.7017 |
+| Precision | 0.6263 |
+| Recall | 0.8889 |
+| F1 Score | 0.7348 |
+| Decision Threshold | 0.33 |
 
-The deployment threshold is intentionally tuned toward **high recall**. In a churn-retention problem, failing to identify an actual churner can be more expensive than contacting an additional lower-risk customer. The selected threshold raises churn recall to ~88.9% while slightly reducing overall accuracy.
+The threshold of `0.33` was chosen to increase churn recall. At this threshold, the model identifies approximately **88.9% of actual churners** in the test set.
 
-## How to Run Locally (Windows)
+For comparison, the default threshold of `0.50` produced an accuracy of `0.7358` and an F1 score of `0.7246`.
 
-### 1. Extract the ZIP
-Open PowerShell or Command Prompt inside the project folder.
+## Evaluation
+
+The repository includes the following evaluation outputs:
+
+- Confusion matrix
+- ROC curve
+- Precision-Recall curve
+- Model comparison chart
+- Threshold analysis
+- Feature importance analysis
+- Classification report
+
+Generated plots and metric files are available in the `reports/` directory.
+
+## Project Structure
+
+```text
+telecom-customer-churn-prediction/
+├── app.py
+├── predict.py
+├── generate_dataset.py
+├── Customer_Churn_Analysis.ipynb
+├── requirements.txt
+├── Dockerfile
+├── Procfile
+├── data/
+│   └── telecom_customer_churn.csv
+├── src/
+│   ├── features.py
+│   └── train.py
+├── models/
+│   ├── churn_model.joblib
+│   └── metadata.json
+├── reports/
+│   ├── Churn_Analysis_Report.pdf
+│   ├── metrics.json
+│   ├── model_comparison.csv
+│   ├── threshold_analysis.csv
+│   ├── feature_importance.csv
+│   └── figures/
+└── screenshots/
+```
+
+## Running the Project Locally
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Irha-Fatimaa/telecom-customer-churn-prediction.git
+cd telecom-customer-churn-prediction
+```
 
 ### 2. Create a virtual environment
 
@@ -104,9 +144,10 @@ Open PowerShell or Command Prompt inside the project folder.
 python -m venv .venv
 ```
 
-Activate it:
+On Windows PowerShell:
 
-```bash
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .venv\Scripts\activate
 ```
 
@@ -116,102 +157,92 @@ Activate it:
 pip install -r requirements.txt
 ```
 
-### 4. Recreate the dataset (optional)
-The CSV is already included, but you can regenerate it exactly:
+### 4. Test the saved model
+
+```bash
+python predict.py
+```
+
+Example output:
+
+```text
+Prediction: Churn
+Churn probability: 93.138%
+Decision threshold: 0.33
+```
+
+### 5. Run the Streamlit application
+
+```bash
+streamlit run app.py
+```
+
+Open the local URL shown in the terminal, usually:
+
+```text
+http://localhost:8501
+```
+
+## Retraining the Model
+
+The included dataset can be regenerated using:
 
 ```bash
 python generate_dataset.py
 ```
 
-### 5. Retrain and evaluate
-
-```bash
-set PYTHONPATH=src
-python src\train.py
-```
-
-PowerShell alternative:
+To retrain the model in PowerShell:
 
 ```powershell
 $env:PYTHONPATH="src"
 python src/train.py
 ```
 
-This regenerates the model, metrics, CSV reports, and figures.
+This recreates the trained model, evaluation metrics, and plots.
 
-### 6. Test a prediction
+## Streamlit Application
 
-```bash
-python predict.py
-```
+The Streamlit interface allows a user to enter customer information and receive:
 
-Expected behavior: it prints a churn/stay prediction, churn probability, and decision threshold.
+- Predicted churn class
+- Churn probability
+- Risk interpretation
+- Decision threshold used by the model
 
-### 7. Launch the deployment app
+The application uses the same saved preprocessing and prediction pipeline used during model development.
 
-```bash
-streamlit run app.py
-```
+## Docker
 
-Then open the local Streamlit URL shown in the terminal, usually `http://localhost:8501`.
-
-## Deployment Options
-
-### Streamlit Community Cloud
-1. Push this repository to GitHub.
-2. Sign in to Streamlit Community Cloud.
-3. Create a new app from the GitHub repository.
-4. Set the main file path to `app.py`.
-5. Deploy.
-
-### Docker
+The project can also be run in a Docker container:
 
 ```bash
 docker build -t churn-predictor .
 docker run -p 8501:8501 churn-predictor
 ```
 
-Then open `http://localhost:8501`.
+Then open:
 
-## Evaluation Artifacts
+```text
+http://localhost:8501
+```
 
-The `reports/figures/` folder contains:
+## Repository Contents
 
-- **Confusion matrix** - summarizes correct and incorrect churn decisions.
-- **ROC curve** - shows discrimination over all thresholds.
-- **Precision-Recall curve** - especially useful for churn-class performance.
-- **Threshold optimization** - shows precision, recall and F1 across cutoffs.
-- **Feature importance** - permutation-based business driver ranking.
-- **Model comparison** - cross-validated ROC-AUC across candidate algorithms.
+- `Customer_Churn_Analysis.ipynb` — notebook containing the analysis workflow
+- `src/features.py` — cleaning and feature engineering functions
+- `src/train.py` — training and evaluation pipeline
+- `predict.py` — command-line prediction example
+- `app.py` — Streamlit application
+- `models/` — saved trained model and metadata
+- `reports/` — metrics, charts, and project report
+- `screenshots/` — selected project outputs and deployment screenshots
 
-## Business Interpretation
+## Limitations
 
-The engineered and raw features allow the model to prioritize actionable risk patterns. Important signals in this run include month-to-month contracts, tenure, internet service, contract type, total charges, and support-related services. A telecom retention team could use the churn probability to segment customers into outreach priorities rather than relying on a single yes/no rule.
+The dataset used in this project is synthetic and is intended for model development and demonstration. Performance on real telecom data may differ. A production deployment would require validation on real customer data, continuous monitoring, privacy controls, model-drift checks, and periodic retraining.
 
-Suggested operational use:
+## Author
 
-- High risk: immediate retention campaign or personalized offer.
-- Medium risk: targeted engagement and service-quality follow-up.
-- Low risk: normal customer relationship management.
-
-## Reproducibility
-
-- Random seed: `42`
-- Included dataset: yes
-- Included trained model: yes
-- Included requirements: yes
-- Included saved metrics and figures: yes
-- Training pipeline avoids fitting preprocessing on the full dataset before splitting.
-
-## Files to Submit
-
-For the BeeNeural task submission, use:
-
-1. GitHub repository link containing the complete project.
-2. `reports/Churn_Analysis_Report.pdf`.
-3. Screenshots from `screenshots/` plus a screenshot of the running Streamlit page after you launch it locally.
-4. The complete ZIP as an uploaded supporting file if the platform allows it.
-
-## Notes
-
-This project is intended as an academic machine-learning submission and demonstration. Model performance on a synthetic benchmark does not guarantee the same performance on live telecom customers; a production system would require real labeled data, monitoring, drift detection, fairness checks, privacy review, and periodic retraining.
+**Irha Fatima**  
+BS Artificial Intelligence  
+Bahria University Karachi Campus
