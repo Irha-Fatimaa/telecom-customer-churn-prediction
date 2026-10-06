@@ -1,0 +1,20 @@
+BeeNeural Task: Adaptive - Develop a Predictive Model for Customer Churn Analysis
+
+Completed an end-to-end telecom churn ML project with:
+- Reproducible telecom dataset and cleaning pipeline
+- 11 business-oriented engineered features
+- Logistic Regression, Random Forest and HistGradientBoosting model comparison
+- Random Forest parameter tuning and held-out model selection
+- Accuracy, precision, recall, F1, ROC-AUC and PR-AUC evaluation
+- Confusion matrix, ROC/PR curves, threshold analysis and permutation feature importance
+- Saved scikit-learn model pipeline
+- Streamlit deployment application, CLI prediction script and Docker configuration
+
+Final selected model: Logistic Regression
+ROC-AUC: 0.7864
+PR-AUC: 0.7290
+Recall at deployment threshold: 0.8889
+F1 at deployment threshold: 0.7348
+
+GitHub Repository: <PASTE YOUR GITHUB REPOSITORY LINK HERE>
+Deployment URL (optional): <PASTE YOUR STREAMLIT URL HERE>
